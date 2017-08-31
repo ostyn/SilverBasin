@@ -1,0 +1,9 @@
+<template>
+  <h1>${message}</h1>
+  <a href="https://login.live.com/oauth20_authorize.srf?client_id=00000000481F2530&scope=wl.offline_access onedrive.readwrite&response_type=code&redirect_uri=http://localhost:5000/saveAuthToken">Grant Odpac OneDrive Permissions</a>
+<button click.trigger="popToParent()">/\</button>
+<div repeat.for="file of cachedDirectories[currentPath]">
+  <div if.bind="file.folder" click.trigger="load(file.parentReference.path + '/' + file.name)">[${file.name}]</div>
+  <div if.bind="file.file">${file.name}</div>
+</div>
+</template>
