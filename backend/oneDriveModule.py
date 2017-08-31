@@ -5,9 +5,9 @@ from flask import request, jsonify, Blueprint, abort
 from bson.objectid import ObjectId
 from configMaster import CLIENT_ID, CLIENT_SECRET
 
-def construct_blueprint(codesCollection):
+def construct_blueprint(codesCollection, savedPathsCollection):
     oneDriveModule = Blueprint('oneDriveModule', __name__)
-
+    pathLengths={}
     @oneDriveModule.route("/saveAuthToken", methods=['GET'])
     def saveAuthToken():
         code = request.args.get('code')
@@ -43,31 +43,53 @@ def construct_blueprint(codesCollection):
         if entry is None or entry.get("access_token") is None:
             abort(401)
         headers = {"Content-type": "application/x-www-form-urlencoded"}
-        response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?access_token=" + entry.get("access_token"), headers=headers)
+        response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?filter=folder ne null&access_token=" + entry.get("access_token"), headers=headers)
         response = json.loads(response.text)
         if response_is_error(response):
             refresh_code(entry.get("code"), entry.get("refresh_token"))
             return listDirectory(path)
         return jsonify(response)
 
-    # Max number of items per folder is 1000
+    @oneDriveModule.route("/savedPaths", methods=['GET'])
+    def getSavedPathsWrapper():
+        return jsonify({'paths' : getSavedPaths()})
+    def getSavedPaths():
+        result = savedPathsCollection.find_one()
+        paths = []
+        if result is not None:
+            paths = list(result["paths"])
+        return paths
+    @oneDriveModule.route("/savedPaths", methods=['POST'])
+    def postSavedPaths():
+        jsonData = request.json
+        if('paths' not in jsonData):
+            return jsonify({'resp': False})
+        savedPathsCollection.drop()
+        if(len(jsonData["paths"]) == 0):
+            return jsonify({'resp' : True})
+        savedPathsCollection.insert({'paths' : list(jsonData["paths"])})
+        return jsonify({'resp' : True})
+
+    # Max number of items per folder is 1000, no nesting
     @oneDriveModule.route("/randomMediaFile", methods=['GET'])
     def randomMediaFile():
-        paths = [ "/drive/root:/Pictures/2017/Seoul"]
-        pathLengths = {}
+        paths = getSavedPaths()
         entry = codesCollection.find_one()
         if entry is None or entry.get("access_token") is None:
             abort(401)
         headers = {"Content-type": "application/x-www-form-urlencoded"}
         count = 0
         for path in paths:
-            response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?top=1000&select=id&filter=file ne null and (image ne null or video ne null)&access_token=" + entry.get("access_token"), headers=headers)
-            response = json.loads(response.text)
-            if response_is_error(response):
-                refresh_code(entry.get("code"), entry.get("refresh_token"))
-                return randomMediaFile()
-            count += len(response["value"])
-            pathLengths[path] = len(response["value"])
+            if path not in pathLengths:
+                response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?top=1000&select=id&filter=file ne null and (image ne null or video ne null)&access_token=" + entry.get("access_token"), headers=headers)
+                response = json.loads(response.text)
+                if response_is_error(response):
+                    refresh_code(entry.get("code"), entry.get("refresh_token"))
+                    return randomMediaFile()
+                count += len(response["value"])
+                pathLengths[path] = len(response["value"])
+            else:
+                count += pathLengths[path]
         if count <= 0:
             return ""
         randomIndex = randint(0, count-1)
