@@ -1,6 +1,5 @@
 <template>
   <require from="style.css"></require>
-  <link rel="prerender" href.bind='this.loadingImage["@content.downloadUrl"]'>
   <div css.bind="getBackgroundPreload"></div>
   <div click.trigger="getNextImage()" class="background" css.bind="getBackground">
     <div if.bind="false">
