@@ -100,7 +100,7 @@ def construct_blueprint(codesCollection, savedPathsCollection):
             if remainder <= 0:
                 remainder += pathLengths[path]
                 break
-        response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?orderby=name asc&filter=file ne null and (image ne null or video ne null)&top=" + str(remainder + 1) + "&access_token=" + entry.get("access_token"), headers=headers)
+        response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?orderby=name asc&filter=file ne null and image ne null&top=1000&access_token=" + entry.get("access_token"), headers=headers)
         response = json.loads(response.text)
         file = response["value"][remainder]
         file["stats"] = "original random index: " + str(randomIndex) +". Reduced to: " + str(remainder)
