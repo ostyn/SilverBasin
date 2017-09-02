@@ -2,21 +2,26 @@ import {inject, computedFrom} from 'aurelia-framework';
 import {HttpClient, json} from 'aurelia-fetch-client';
 @inject(HttpClient)
 export class App {
-  currentImage = {};
-  loadingImage = {};
+  currentImage = undefined;
+  loadingImage = undefined;
   currentTimeout = undefined;
   @computedFrom('currentImage') //use @computedFrom to avoid dirty-checking
   get getBackground() {
+    if(!this.currentImage)
+      return {};
     return {
-      'background-image': "url(" + this.currentImage["@content.downloadUrl"] + ")",
+      'background-image': "url(" + this.currentImage["@content.downloadUrl"] + "?width=3840&height=2160)",
+      'background-size': (this.currentImage.image.height >= this.currentImage.image.width) ? "contain" : "cover",
       'width': '100%',
       'height' : '100%'
     }
   }
   @computedFrom('loadingImage') //use @computedFrom to avoid dirty-checking
   get getBackgroundPreload() {
+    if(!this.loadingImage)
+      return {};
     return {
-      'background-image': "url(" + this.loadingImage["@content.downloadUrl"] + ")",
+      'background-image': "url(" + this.loadingImage["@content.downloadUrl"] + "?width=3840&height=2160)",
       'width': '0%',
       'height' : '0%',
       'visibility': 'hidden'
