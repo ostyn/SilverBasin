@@ -71,8 +71,10 @@ export class App {
     this.httpClient.fetch('http://localhost:5000/randomMediaFile')
       .then(response => {return response.json()})
       .then(data => {
-          if(this.currentImage == {})
+          if(!this.currentImage) {
             this.currentImage = data;
+            this.getNextImage();
+          }
           this.loadingImage = data;
       })
       .catch(ex => {
