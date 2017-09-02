@@ -81,7 +81,7 @@ def construct_blueprint(codesCollection, savedPathsCollection):
         count = 0
         for path in paths:
             if path not in pathLengths:
-                response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?top=1000&select=id&filter=file ne null and (image ne null or video ne null)&access_token=" + entry.get("access_token"), headers=headers)
+                response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?top=1000&select=id&filter=file ne null and image ne null&access_token=" + entry.get("access_token"), headers=headers)
                 response = json.loads(response.text)
                 if response_is_error(response):
                     refresh_code(entry.get("code"), entry.get("refresh_token"))
