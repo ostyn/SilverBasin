@@ -78,6 +78,11 @@
             "main": "aurelia-fetch-client",
             "path": "../node_modules/aurelia-fetch-client/dist/amd",
             "resources": []
+          },
+          {
+            "name": "aurelia-dialog",
+            "main": "aurelia-dialog",
+            "path": "../node_modules/aurelia-dialog/dist/amd"
           }
         ]
       }
