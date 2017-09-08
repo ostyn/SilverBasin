@@ -1,6 +1,8 @@
 import {inject, computedFrom} from 'aurelia-framework';
 import {HttpClient, json} from 'aurelia-fetch-client';
-@inject(HttpClient)
+import {DialogService} from 'aurelia-dialog';
+import {SelectFolders} from './select-folders';
+@inject(HttpClient, DialogService)
 export class App {
   currentImage = undefined;
   loadingImage = undefined;
@@ -27,42 +29,10 @@ export class App {
       'visibility': 'hidden'
     }
   }
-  cachedDirectories = {};
-  collectedPaths = new Set();
-  currentPath = "";
-  pathStack = [];
-  constructor(httpClient) {
+  constructor(httpClient, dialogService) {
+    this.dialogService = dialogService;
     this.httpClient = httpClient;
-    this.load();
-    this.getSavedPaths();
     this.getNextImage();
-  }
-  load(path = "/") {
-    this.pathStack.push(path);
-    this.currentPath = path;
-    if(this.cachedDirectories[path])
-      return;
-    let queryParams = "";
-    if (path != "/")
-      queryParams = "?path=" + path;
-    return this.httpClient.fetch('http://localhost:5000/listDirectory' + queryParams)
-    .then(response => {return response.json()})
-    .then(data => {
-        this.cachedDirectories[path] = data.value;
-    })
-    .catch(ex => {
-      console.log(ex);
-    });
-  }
-  getSavedPaths() {
-    this.httpClient.fetch('http://localhost:5000/savedPaths')
-      .then(response => {return response.json()})
-      .then(data => {
-          this.collectedPaths = new Set(data.paths);
-      })
-      .catch(ex => {
-        console.log(ex);
-      });
   }
   getNextImage() {
     clearTimeout(this.currentTimeout);
@@ -81,26 +51,18 @@ export class App {
         console.log(ex);
       });
   }
-  popToParent() {
-    this.pathStack.pop();
-		this.load(this.pathStack.pop());
+  openFolderDialog(){
+    this.dialogService.open({ viewModel: SelectFolders, model: this.person, lock: false })
+      .whenClosed(response => {
+        if (!response.wasCancelled) {
+          console.log('good - ', response.output);
+        } else {
+          console.log('bad');
+        }
+        console.log(response.output);
+      });
   }
-  collectFolder(folder){
-    this.collectedPaths.add(folder.parentReference.path + '/' + folder.name);
-  }
-  savePaths(){
-    let paths = Array.from(this.collectedPaths)
-    this.httpClient.fetch('http://localhost:5000/savedPaths', 
-      {
-        method: 'post',
-        body: json({'paths':paths})
-      })
-    .then(response => {return response.json()})
-    .then(data => {
-        console.log(data);
-    })
-    .catch(ex => {
-      console.log(ex);
-    });
+  toggleMenu() {
+    this.showMenu = !this.showMenu;
   }
 }

@@ -1,0 +1,23 @@
+<template>
+    <ux-dialog>
+        <ux-dialog-body>
+            <a href="https://login.live.com/oauth20_authorize.srf?client_id=00000000481F2530&scope=wl.offline_access onedrive.readwrite&response_type=code&redirect_uri=http://localhost:5000/saveAuthToken">Grant Odpac OneDrive Permissions</a>
+            <button click.trigger="popToParent()">/\</button>
+            <div if.bind="cachedDirectories[currentPath].length == 0"><i>No sub-folders</i></div>
+            <div repeat.for="file of cachedDirectories[currentPath]">
+                <div if.bind="file.folder">
+                    <button if.bind="!collectedPaths.has(file.parentReference.path + '/' + file.name)" click.trigger="collectFolder(file)">+</button>
+                    <span click.trigger="load(file.parentReference.path + '/' + file.name)">${file.name}(${file.folder.childCount})</span>
+                </div>
+                <div if.bind="file.file">${file.name}</div>
+            </div>
+            <div repeat.for="path of collectedPaths">
+                <button click.trigger="collectedPaths.delete(path)">-</button>${path}</div>
+        </ux-dialog-body>
+
+        <ux-dialog-footer>
+            <button click.trigger="savePaths()">Save</button>
+            <button click.trigger="controller.cancel()">Cancel</button>
+        </ux-dialog-footer>
+    </ux-dialog>
+</template>
