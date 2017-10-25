@@ -3,10 +3,10 @@
   <div css.bind="getBackgroundPreload"></div>
   <div click.trigger="getNextImage()" class="background" css.bind="getBackground">
   </div>
-  <span if.bind="currentImage" class="location">
+  <span class="location">
     <span click.trigger="toggleMenu()" if.bind="currentImage.location">${currentImage.location.displayName}, ${currentImage.location.address.countryOrRegion}</span>
     <span click.trigger="toggleMenu()" if.bind="!currentImage.location">${currentImage.parentReference.name}</span>
-    <div if.bind="showMenu">
+    <div>
         <div>${currentImage.photo.takenDateTime}</div>
       <button click.trigger="openFolderDialog()">Choose Folders</button>
     </div>

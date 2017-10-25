@@ -1,4 +1,4 @@
-import json, requests
+import json, requests, time
 from random import randint
 from flask import request, jsonify, Blueprint, abort
 
@@ -8,6 +8,7 @@ from configMaster import CLIENT_ID, CLIENT_SECRET
 def construct_blueprint(codesCollection, savedPathsCollection):
     oneDriveModule = Blueprint('oneDriveModule', __name__)
     pathLengths={}
+    files = {}
     @oneDriveModule.route("/saveAuthToken", methods=['GET'])
     def saveAuthToken():
         code = request.args.get('code')
@@ -70,8 +71,27 @@ def construct_blueprint(codesCollection, savedPathsCollection):
         savedPathsCollection.insert({'paths' : list(jsonData["paths"])})
         return jsonify({'resp' : True})
 
+    @oneDriveModule.route("/nextImage", methods=['GET'])
+    def nextImageWrapper():
+        nextImage(time.time())
+
+    def nextImage(expirationTime):
+        files["current"] = randomMediaFile()
+        files["current"]["expirationDate"] = expirationTime + 30
+    
+    @oneDriveModule.route("/getCurrentImage", methods=['GET'])
+    def getCurrentImage():
+        requestTime = time.time()
+        if("current" not in files):
+            nextImage(requestTime)
+        elif requestTime > files["current"]["expirationDate"]:
+            nextImage(requestTime)
+        return jsonify(files["current"])
+
     # Max number of items per folder is 1000, no nesting
     @oneDriveModule.route("/randomMediaFile", methods=['GET'])
+    def randomMediaFileWrapper():
+        return jsonify(randomMediaFile())
     def randomMediaFile():
         paths = getSavedPaths()
         entry = codesCollection.find_one()
@@ -102,11 +122,14 @@ def construct_blueprint(codesCollection, savedPathsCollection):
                 break
         response = requests.get("https://api.onedrive.com/v1.0" + path + ":/children?orderby=name asc&filter=file ne null and image ne null&top=1000&access_token=" + entry.get("access_token"), headers=headers)
         response = json.loads(response.text)
+        if response_is_error(response):
+            refresh_code(entry.get("code"), entry.get("refresh_token"))
+            return randomMediaFile()
         if ("value" not in response):
-            return jsonify({'err':response})
+            return {'err':response}
         file = response["value"][remainder]
         file["stats"] = "original random index: " + str(randomIndex) +". Reduced to: " + str(remainder)
-        return jsonify(file)
+        return file
 
     def response_is_error(response):
         return response.get('error') and response.get('error').get('code') and response.get('error').get('code') == "unauthenticated"

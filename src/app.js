@@ -9,7 +9,7 @@ export class App {
   currentTimeout = undefined;
   @computedFrom('currentImage') //use @computedFrom to avoid dirty-checking
   get getBackground() {
-    if(!this.currentImage)
+    if(!this.currentImage || !this.currentImage.image)
       return {};
     return {
       'background-image': "url(" + this.currentImage["@content.downloadUrl"] + "?width=3840&height=2160)",
@@ -32,20 +32,37 @@ export class App {
   constructor(httpClient, dialogService) {
     this.dialogService = dialogService;
     this.httpClient = httpClient;
-    this.getNextImage();
+    this.getCurrentImage();
+  }
+  getCurrentImage() {
+    clearTimeout(this.currentTimeout);
+    this.currentTimeout = setTimeout(this.getCurrentImage.bind(this), 30000);
+    this.currentImage = this.loadingImage;
+    this.httpClient.fetch('http://localhost:5000/getCurrentImage')
+      .then(response => {
+        if(response.status < 400)
+          return response.json()
+      })
+      .then(data => {
+          this.loadingImage = data.next;
+          this.currentImage = data.current;
+      })
+      .catch(ex => {
+        console.log(ex);
+      });
   }
   getNextImage() {
     clearTimeout(this.currentTimeout);
-    this.currentTimeout = setTimeout(this.getNextImage.bind(this), 25000);
+    this.currentTimeout = setTimeout(this.getCurrentImage.bind(this), 30000);
     this.currentImage = this.loadingImage;
-    this.httpClient.fetch('http://localhost:5000/randomMediaFile')
-      .then(response => {return response.json()})
+    this.httpClient.fetch('http://localhost:5000/nextImage')
+      .then(response => {
+        if(response.status < 400)
+          return response.json()
+      })
       .then(data => {
-          if(!this.currentImage) {
-            this.currentImage = data;
-            this.getNextImage();
-          }
-          this.loadingImage = data;
+          this.loadingImage = data.next;
+          this.currentImage = data.current;
       })
       .catch(ex => {
         console.log(ex);
